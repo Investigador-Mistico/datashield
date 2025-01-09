@@ -14,12 +14,12 @@ banner() {
   echo -e "${CYAN}"
   echo "============================================="
   echo "            ██████╗  █████╗ ███████╗         "
-  echo "           ██╔════╝ ██╔══██╗██╔════╝         "
-  echo "           ██║  ███╗███████║█████╗           "
+  echo "           ██╔═══██╗██╔══██╗██╔════╝         "
+  echo "           ██║   ██║███████║█████╗           "
   echo "           ██║   ██║██╔══██║██╔══╝           "
   echo "           ╚██████╔╝██║  ██║███████╗         "
   echo "            ╚═════╝ ╚═╝  ╚═╝╚══════╝         "
-  echo "         DataShield Painel - V1.0            "
+  echo "          DataShield - Painel de Segurança   "
   echo "============================================="
   echo -e "${RESET}"
 }
@@ -51,13 +51,17 @@ menu() {
     clear
     banner
     echo -e "${BLUE}1. Atualizar Painel${RESET}"
-    echo -e "${BLUE}2. Sair${RESET}"
+    echo -e "${BLUE}2. Consultar IP${RESET}"
+    echo -e "${BLUE}3. Analisar URL${RESET}"
+    echo -e "${BLUE}4. Sair${RESET}"
     echo -e "${CYAN}Escolha uma opção:${RESET}"
     read option
 
     case $option in
       1) update_painel ;;
-      2) exit 0 ;;
+      2) consultar_ip ;;
+      3) analisar_url ;;
+      4) exit 0 ;;
       *) echo -e "${RED}Opção inválida. Tente novamente.${RESET}" ;;
     esac
     sleep 2
@@ -86,7 +90,45 @@ update_painel() {
   sleep 2
 }
 
+# Função para consultar informações de um IP
+consultar_ip() {
+  echo -e "${WHITE}Digite o IP para consulta:${RESET}"
+  read ip
+  echo -e "${CYAN}Consultando informações de IP...${RESET}"
+  curl -s "http://ip-api.com/json/$ip" | jq || {
+    echo -e "${RED}Erro ao buscar informações do IP. Certifique-se de estar conectado à internet.${RESET}"
+  }
+  sleep 3
+}
+
+# Função para analisar vulnerabilidades de URL
+analisar_url() {
+  echo -e "${WHITE}Digite a URL para análise:${RESET}"
+  read url
+  echo -e "${CYAN}Verificando vulnerabilidades na URL...${RESET}"
+
+  # Teste de resposta HTTP
+  response=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+  if [[ $response -ne 200 ]]; then
+    echo -e "${RED}A URL não está acessível (Código HTTP: $response).${RESET}"
+  else
+    echo -e "${GREEN}A URL está acessível. Iniciando análise...${RESET}"
+
+    # Verificando vulnerabilidades de SQL Injection
+    sql_test=$(curl -s "$url' OR '1'='1")
+    if [[ $sql_test == *"error"* ]]; then
+      echo -e "${RED}Possível vulnerabilidade de SQL Injection detectada!${RESET}"
+    else
+      echo -e "${GREEN}Nenhuma vulnerabilidade de SQL Injection detectada.${RESET}"
+    fi
+
+    # Verificando cabeçalhos HTTP
+    echo -e "${CYAN}Cabeçalhos HTTP:${RESET}"
+    curl -s -I "$url" | grep -i "Server\|X-Frame-Options\|X-Content-Type-Options"
+  fi
+  sleep 3
+}
+
 # Início do programa
 banner
 login
-
