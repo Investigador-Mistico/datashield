@@ -12,15 +12,15 @@ RESET='\033[0m'
 banner() {
   clear
   echo -e "${CYAN}"
-  echo "============================================="
-  echo "            ██████╗  █████╗ ███████╗         "
-  echo "           ██╔═══██╗██╔══██╗██╔════╝         "
-  echo "           ██║   ██║███████║█████╗           "
-  echo "           ██║   ██║██╔══██║██╔══╝           "
-  echo "           ╚██████╔╝██║  ██║███████╗         "
-  echo "            ╚═════╝ ╚═╝  ╚═╝╚══════╝         "
-  echo "          DataShield - Painel de Segurança   "
-  echo "============================================="
+  echo "==========================================================="
+  echo "               ██████╗  █████╗ ███████╗██╗  ██╗            "
+  echo "              ██╔═══██╗██╔══██╗██╔════╝██║  ██║            "
+  echo "              ██║   ██║███████║█████╗  ███████║            "
+  echo "              ██║   ██║██╔══██║██╔══╝  ██╔══██║            "
+  echo "              ╚██████╔╝██║  ██║███████╗██║  ██║            "
+  echo "               ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝            "
+  echo "          DataShield - Painel Avançado de Segurança        "
+  echo "==========================================================="
   echo -e "${RESET}"
 }
 
@@ -52,7 +52,7 @@ menu() {
     banner
     echo -e "${BLUE}1. Atualizar Painel${RESET}"
     echo -e "${BLUE}2. Consultar IP${RESET}"
-    echo -e "${BLUE}3. Analisar URL${RESET}"
+    echo -e "${BLUE}3. Analisar URL (SQL Injection)${RESET}"
     echo -e "${BLUE}4. Sair${RESET}"
     echo -e "${CYAN}Escolha uma opção:${RESET}"
     read option
@@ -101,31 +101,33 @@ consultar_ip() {
   sleep 3
 }
 
-# Função para analisar vulnerabilidades de URL
+# Função para analisar vulnerabilidades de SQL Injection em uma URL
 analisar_url() {
   echo -e "${WHITE}Digite a URL para análise:${RESET}"
   read url
-  echo -e "${CYAN}Verificando vulnerabilidades na URL...${RESET}"
+  echo -e "${CYAN}Verificando vulnerabilidades na URL usando SQLMap...${RESET}"
 
-  # Teste de resposta HTTP
-  response=$(curl -s -o /dev/null -w "%{http_code}" "$url")
-  if [[ $response -ne 200 ]]; then
-    echo -e "${RED}A URL não está acessível (Código HTTP: $response).${RESET}"
-  else
-    echo -e "${GREEN}A URL está acessível. Iniciando análise...${RESET}"
+  # Verifica vulnerabilidades básicas de SQL Injection
+  echo -e "${BLUE}Executando sqlmap para descobrir bancos de dados...${RESET}"
+  sqlmap -u "$url" --batch --dbs
 
-    # Verificando vulnerabilidades de SQL Injection
-    sql_test=$(curl -s "$url' OR '1'='1")
-    if [[ $sql_test == *"error"* ]]; then
-      echo -e "${RED}Possível vulnerabilidade de SQL Injection detectada!${RESET}"
-    else
-      echo -e "${GREEN}Nenhuma vulnerabilidade de SQL Injection detectada.${RESET}"
-    fi
-
-    # Verificando cabeçalhos HTTP
-    echo -e "${CYAN}Cabeçalhos HTTP:${RESET}"
-    curl -s -I "$url" | grep -i "Server\|X-Frame-Options\|X-Content-Type-Options"
+  echo -e "${CYAN}Deseja listar as tabelas de um banco específico? (s/n)${RESET}"
+  read resposta
+  if [[ $resposta == "s" || $resposta == "S" ]]; then
+    echo -e "${WHITE}Digite o nome do banco de dados:${RESET}"
+    read db_name
+    sqlmap -u "$url" --batch -D "$db_name" --tables
   fi
+
+  echo -e "${CYAN}Deseja consultar dados de uma tabela específica? (s/n)${RESET}"
+  read resposta
+  if [[ $resposta == "s" || $resposta == "S" ]]; then
+    echo -e "${WHITE}Digite o nome da tabela:${RESET}"
+    read table_name
+    sqlmap -u "$url" --batch -D "$db_name" -T "$table_name" --dump
+  fi
+
+  echo -e "${GREEN}Análise concluída!${RESET}"
   sleep 3
 }
 
